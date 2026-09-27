@@ -1,0 +1,18 @@
+{
+  "name": "Neon Rider Extreme",
+  "short_name": "Neon Rider",
+  "description": "High-octane cyberpunk 2D physics motorcycle stunt game with garage upgrades and collectible neon coins.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0c10",
+  "theme_color": "#0b0c10",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%230b0c10' stroke='%2366fcf1' stroke-width='4'/%3E%3Cpath d='M16 38 L24 22 L40 22 L48 38 Z' fill='%23ff007f' stroke='%23ffffff' stroke-width='2'/%3E%3Ccircle cx='20' cy='42' r='8' fill='none' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='44' cy='42' r='8' fill='none' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='34' cy='20' r='5' fill='%2366fcf1'/%3E%3C/svg%3E",
+      "sizes": "64x64 128x128 192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

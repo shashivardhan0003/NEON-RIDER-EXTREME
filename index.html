@@ -1,0 +1,2867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Neon Rider Extreme - 2D Cyberpunk Stunt Racing</title>
+  <meta name="description" content="Neon Rider Extreme: High-octane cyberpunk 2D physics motorcycle stunt game with 10 extreme levels, agile flips, customizable bikes, and chasms.">
+  <meta name="theme-color" content="#0b0c10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Neon Rider">
+
+  <!-- Open Graph Meta -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Neon Rider Extreme - Cyberpunk Stunt Racing">
+  <meta property="og:description" content="High-octane cyberpunk 2D physics motorcycle stunt game with 10 levels of extreme ramps, chasms, and agile flips!">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%230b0c10' stroke='%2300f0ff' stroke-width='4'/%3E%3Cpath d='M16 38 L24 22 L40 22 L48 38 Z' fill='%23ff007f' stroke='%23ffffff' stroke-width='2'/%3E%3Ccircle cx='20' cy='42' r='8' fill='none' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='44' cy='42' r='8' fill='none' stroke='%23ffffff' stroke-width='3'/%3E%3Ccircle cx='34' cy='20' r='5' fill='%2300f0ff'/%3E%3C/svg%3E">
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Google Fonts: Orbitron & Share Tech Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+  <!-- Matter.js Physics Engine CDN (Prompt 2) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+  <style>
+    :root {
+      --bg-color: #0b0c10;
+      --bg-card: rgba(14, 18, 26, 0.92);
+      --border-card: rgba(0, 240, 255, 0.25);
+      --level-neon: #00f0ff;
+      --cyan-neon: #00f0ff;
+      --pink-neon: #ff007f;
+      --green-neon: #39ff14;
+      --yellow-neon: #ffe600;
+      --font-display: 'Orbitron', -apple-system, sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      font-family: var(--font-display);
+      color: #fff;
+    }
+
+    #app-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-color);
+    }
+
+    /* Generic Screen State (Prompt 1) */
+    .screen-view {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      background: radial-gradient(circle at 50% 30%, rgba(0, 240, 255, 0.08) 0%, rgba(11, 12, 16, 0.98) 75%), var(--bg-color);
+    }
+
+    .screen-view.active {
+      display: flex;
+    }
+
+    /* Common Neon Buttons */
+    .neon-btn {
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.15), rgba(0, 119, 255, 0.25));
+      border: 2px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      border-radius: 12px;
+      padding: 14px 32px;
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .neon-btn:hover {
+      background: var(--cyan-neon);
+      color: #0b0c10;
+      box-shadow: 0 0 35px var(--cyan-neon), 0 0 60px rgba(0, 240, 255, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .neon-btn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .neon-btn.pink {
+      border-color: var(--pink-neon);
+      color: var(--pink-neon);
+      box-shadow: 0 0 20px rgba(255, 0, 127, 0.3);
+      background: linear-gradient(135deg, rgba(255, 0, 127, 0.15), rgba(255, 77, 148, 0.25));
+    }
+
+    .neon-btn.pink:hover {
+      background: var(--pink-neon);
+      color: #fff;
+      box-shadow: 0 0 35px var(--pink-neon), 0 0 60px rgba(255, 0, 127, 0.5);
+    }
+
+    .neon-btn.yellow {
+      border-color: var(--yellow-neon);
+      color: var(--yellow-neon);
+      box-shadow: 0 0 20px rgba(255, 230, 0, 0.3);
+      background: linear-gradient(135deg, rgba(255, 230, 0, 0.15), rgba(255, 170, 0, 0.25));
+    }
+
+    .neon-btn.yellow:hover {
+      background: var(--yellow-neon);
+      color: #0b0c10;
+      box-shadow: 0 0 35px var(--yellow-neon);
+    }
+
+    .neon-btn.green {
+      border-color: var(--green-neon);
+      color: var(--green-neon);
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.3);
+      background: linear-gradient(135deg, rgba(57, 255, 20, 0.15), rgba(0, 200, 100, 0.25));
+    }
+
+    .neon-btn.green:hover {
+      background: var(--green-neon);
+      color: #0b0c10;
+      box-shadow: 0 0 35px var(--green-neon);
+    }
+
+    .neon-btn.disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      border-color: #555 !important;
+      color: #888 !important;
+      box-shadow: none !important;
+      transform: none !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+
+    /* =============================================================
+       1. MAIN MENU SCREEN (Prompt 1)
+    ============================================================= */
+    #screen-main-menu {
+      text-align: center;
+      padding: 24px;
+      gap: 16px;
+    }
+
+    .menu-title-box {
+      margin-bottom: 8px;
+    }
+
+    .menu-title {
+      font-size: clamp(38px, 7vw, 68px);
+      font-weight: 900;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, #00f0ff, #ff007f, #ffe600);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 25px rgba(255, 0, 127, 0.6));
+    }
+
+    .menu-subtitle {
+      font-family: var(--font-mono);
+      font-size: clamp(12px, 2.5vw, 16px);
+      letter-spacing: 4px;
+      color: #66fcf1;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* Current Level Readout Card (Prompt 1) */
+    .current-level-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(14px);
+      border: 2px solid var(--level-neon);
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.35);
+      border-radius: 18px;
+      padding: 16px 28px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s ease;
+      min-width: 280px;
+    }
+
+    .level-label-caption {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #8b949e;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .current-level-display {
+      font-size: 32px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--level-neon);
+      text-shadow: 0 0 16px var(--level-neon);
+    }
+
+    /* 10 Level Mini Pips Track */
+    .level-pips-track {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .level-pip {
+      width: 18px;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.25s ease;
+    }
+
+    .level-pip.active {
+      background: var(--level-neon);
+      border-color: #fff;
+      box-shadow: 0 0 10px var(--level-neon);
+    }
+
+    .level-pip.cleared {
+      background: var(--green-neon);
+      border-color: var(--green-neon);
+      box-shadow: 0 0 6px var(--green-neon);
+    }
+
+    /* Wallet Coin Badge */
+    .wallet-pill {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 230, 0, 0.35);
+      border-radius: 30px;
+      padding: 8px 22px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 0 20px rgba(255, 230, 0, 0.18);
+    }
+
+    .wallet-coin-icon {
+      font-size: 20px;
+      filter: drop-shadow(0 0 8px var(--yellow-neon));
+    }
+
+    .wallet-label {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: #a0aab2;
+      font-weight: 700;
+    }
+
+    .wallet-amount {
+      font-family: var(--font-mono);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--yellow-neon);
+      text-shadow: 0 0 10px var(--yellow-neon);
+    }
+
+    .menu-buttons-dock {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: min(320px, 90vw);
+      margin-top: 8px;
+    }
+
+    /* =============================================================
+       2. GARAGE MENU SCREEN (Prompt 1 & 2)
+    ============================================================= */
+    #screen-garage {
+      padding: 24px;
+      justify-content: flex-start;
+      overflow-y: auto;
+    }
+
+    .garage-header {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .garage-title {
+      font-size: clamp(24px, 4vw, 32px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      color: var(--cyan-neon);
+      text-shadow: 0 0 15px var(--cyan-neon);
+    }
+
+    .garage-content-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 22px;
+      width: 100%;
+      max-width: 1000px;
+      align-items: start;
+    }
+
+    .bike-selector-box {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .bike-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .bike-card:hover {
+      border-color: var(--cyan-neon);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.25);
+      transform: translateX(4px);
+    }
+
+    .bike-card.selected {
+      border-color: var(--pink-neon);
+      box-shadow: 0 0 25px rgba(255, 0, 127, 0.4);
+      background: rgba(255, 0, 127, 0.08);
+    }
+
+    .bike-card-name {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .bike-card-desc {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #8b949e;
+      margin-top: 3px;
+    }
+
+    .bike-badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .bike-badge.equipped {
+      background: rgba(57, 255, 20, 0.2);
+      border: 1px solid var(--green-neon);
+      color: var(--green-neon);
+    }
+
+    .bike-badge.unlocked {
+      background: rgba(0, 240, 255, 0.2);
+      border: 1px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+    }
+
+    .bike-badge.locked {
+      background: rgba(255, 230, 0, 0.2);
+      border: 1px solid var(--yellow-neon);
+      color: var(--yellow-neon);
+    }
+
+    /* Garage Details & Upgrades */
+    .bike-details-box {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #garagePreviewCanvas {
+      width: 100%;
+      height: 130px;
+      background: #06070a;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+    }
+
+    .upgrade-matrix {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .upgrade-row {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .upgrade-label-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .upgrade-pip-track {
+      display: flex;
+      gap: 8px;
+    }
+
+    .upgrade-pip {
+      flex: 1;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .upgrade-pip.filled {
+      background: var(--yellow-neon);
+      box-shadow: 0 0 10px var(--yellow-neon);
+    }
+
+    .btn-upgrade-action {
+      font-size: 11px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      width: 100%;
+    }
+
+    .garage-footer-bar {
+      width: 100%;
+      max-width: 1000px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    /* =============================================================
+       3. GAMEPLAY UI SCREEN (Prompt 1, 2, 3, 4)
+    ============================================================= */
+    #screen-game {
+      padding: 0;
+      background: #0b0c10;
+    }
+
+    #gameCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    .game-hud-layer {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 20;
+      padding: 14px 18px;
+    }
+
+    /* Top HUD Bar (Prompt 1 & 3: Level & Score) */
+    .hud-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .hud-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .hud-level-pill {
+      border-color: var(--level-neon);
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.35);
+    }
+
+    .hud-level-badge {
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--level-neon);
+      text-shadow: 0 0 10px var(--level-neon);
+      text-transform: uppercase;
+    }
+
+    .hud-score-box {
+      font-family: var(--font-mono);
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .hud-progress-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+      max-width: 380px;
+      pointer-events: auto;
+    }
+
+    .hud-progress-track {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #gameProgressFill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--level-neon), #ff007f);
+      box-shadow: 0 0 10px var(--level-neon);
+      transition: width 0.15s ease-out;
+    }
+
+    .hud-progress-caption {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #cfd8dc;
+      letter-spacing: 1px;
+    }
+
+    .hud-right-dock {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .hud-btn-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .hud-btn-icon:hover {
+      border-color: var(--cyan-neon);
+      box-shadow: 0 0 15px var(--cyan-neon);
+    }
+
+    /* Stunt Banner Notification (Prompt 4) */
+    #stuntBanner {
+      position: absolute;
+      top: 22%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.6);
+      opacity: 0;
+      pointer-events: none;
+      text-align: center;
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease;
+      z-index: 35;
+    }
+
+    #stuntBanner.active {
+      transform: translate(-50%, -50%) scale(1.15);
+      opacity: 1;
+    }
+
+    .stunt-banner-title {
+      font-size: clamp(32px, 6vw, 54px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      background: linear-gradient(90deg, #ff007f, #ffe600, #39ff14);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 20px rgba(255, 0, 127, 0.9));
+    }
+
+    .stunt-banner-pts {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      color: var(--green-neon);
+      text-shadow: 0 0 12px var(--green-neon);
+      font-weight: 700;
+    }
+
+    /* Floating Score Popup Elements (Prompt 4) */
+    .floating-popup-text {
+      position: absolute;
+      font-family: var(--font-display);
+      font-weight: 900;
+      font-size: 20px;
+      color: var(--yellow-neon);
+      text-shadow: 0 0 12px var(--yellow-neon);
+      pointer-events: none;
+      z-index: 32;
+      animation: floatUp 1.2s forwards ease-out;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(0.8); opacity: 1; }
+      100% { transform: translateY(-70px) scale(1.2); opacity: 0; }
+    }
+
+    /* Bottom Touch Controls & Hints */
+    .hud-bottom-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    .touch-controls-dock {
+      display: flex;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .touch-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(14, 18, 26, 0.85);
+      border: 2px solid rgba(0, 240, 255, 0.4);
+      color: var(--cyan-neon);
+      font-size: 20px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.6);
+      touch-action: manipulation;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .touch-btn:active, .touch-btn.active {
+      background: var(--cyan-neon);
+      color: #0b0c10;
+      box-shadow: 0 0 25px var(--cyan-neon);
+      transform: scale(0.92);
+    }
+
+    .touch-btn.pink {
+      color: var(--pink-neon);
+      border-color: rgba(255, 0, 127, 0.4);
+    }
+
+    .touch-btn.pink:active, .touch-btn.pink.active {
+      background: var(--pink-neon);
+      color: #fff;
+      box-shadow: 0 0 25px var(--pink-neon);
+    }
+
+    .key-hints-container {
+      background: rgba(14, 18, 26, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #cfd8dc;
+      display: flex;
+      gap: 14px;
+      pointer-events: none;
+    }
+
+    .key-badge {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    @media (max-width: 768px) {
+      .key-hints-container {
+        display: none;
+      }
+    }
+
+    /* =============================================================
+       4. OVERLAYS: CRASHED & LEVEL COMPLETE (Prompt 1 & 4)
+    ============================================================= */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(11, 12, 16, 0.88);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #111622;
+      border: 2px solid var(--pink-neon);
+      border-radius: 20px;
+      padding: 32px 36px;
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 0 50px rgba(255, 0, 127, 0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .modal-card.victory {
+      border-color: var(--green-neon);
+      box-shadow: 0 0 55px rgba(57, 255, 20, 0.45);
+    }
+
+    .modal-title {
+      font-size: clamp(30px, 5vw, 42px);
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .modal-title.crash {
+      color: var(--pink-neon);
+      text-shadow: 0 0 20px var(--pink-neon);
+    }
+
+    .modal-title.win {
+      color: var(--green-neon);
+      text-shadow: 0 0 20px var(--green-neon);
+    }
+
+    .modal-subtitle {
+      font-size: 14px;
+      color: #cfd8dc;
+      line-height: 1.4;
+    }
+
+    .modal-stats-box {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .modal-stat-label {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: #8b949e;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .modal-stat-val {
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .modal-btn-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    /* Cyber Toast Notification */
+    .neon-toast-pill {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(14, 18, 26, 0.95);
+      border: 1px solid var(--cyan-neon);
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.4);
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 10px 24px;
+      border-radius: 30px;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .neon-toast-pill.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cyber Toast Notification -->
+  <div id="neon-toast" class="neon-toast-pill"></div>
+
+  <div id="app-container">
+
+    <!-- =========================================================
+         SCREEN 1: MAIN MENU (Prompt 1)
+    ========================================================== -->
+    <div id="screen-main-menu" class="screen-view active">
+      <div class="menu-title-box">
+        <h1 class="menu-title">NEON RIDER</h1>
+        <div class="menu-subtitle">EXTREME 2D STUNT RACER</div>
+      </div>
+
+      <!-- Current Level Readout (Prompt 1: Fetch from localStorage, default 1, max 10) -->
+      <div class="current-level-card" id="main-level-card">
+        <div class="level-label-caption">CURRENT PROGRESSION</div>
+        <div class="current-level-display" id="main-level-display">LEVEL 1 / 10</div>
+        <div class="level-pips-track" id="main-level-pips">
+          <!-- 10 Level Pips dynamically rendered -->
+        </div>
+      </div>
+
+      <!-- Wallet Coins Readout -->
+      <div class="wallet-pill">
+        <span class="wallet-coin-icon">🪙</span>
+        <span class="wallet-label">TOTAL COINS:</span>
+        <span id="main-total-coins" class="wallet-amount">0</span>
+      </div>
+
+      <!-- Main Buttons (Prompt 1: Start Game, Garage) -->
+      <div class="menu-buttons-dock">
+        <button id="btn-start-game" class="neon-btn">
+          <span>⚡</span> START GAME
+        </button>
+        <button id="btn-open-garage" class="neon-btn pink">
+          <span>🔧</span> GARAGE & UPGRADES
+        </button>
+        <div style="display: flex; gap: 10px; width: 100%;">
+          <button id="btn-share-main" class="neon-btn" style="flex: 1; font-size: 12px; padding: 10px; border-color: var(--green-neon); color: var(--green-neon);">
+            🔗 SHARE
+          </button>
+          <button id="btn-fullscreen-main" class="neon-btn yellow" style="flex: 1; font-size: 12px; padding: 10px;">
+            ⛶ FULLSCREEN
+          </button>
+        </div>
+        <button id="btn-sound-main" class="neon-btn" style="font-size: 12px; padding: 10px; border-color: rgba(255,255,255,0.25); color: #cfd8dc;">
+          🔊 SOUND: ON
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         SCREEN 2: GARAGE MENU (Prompt 1 & 2)
+    ========================================================== -->
+    <div id="screen-garage" class="screen-view">
+      <div class="garage-header">
+        <h2 class="garage-title">CYBER GARAGE</h2>
+        <div class="wallet-pill">
+          <span class="wallet-coin-icon">🪙</span>
+          <span class="wallet-label">WALLET:</span>
+          <span id="garage-total-coins" class="wallet-amount">0</span>
+        </div>
+      </div>
+
+      <div class="garage-content-grid">
+        <!-- 3 Bikes List (Prompt 1) -->
+        <div class="bike-selector-box">
+          <!-- Bike 1: Starter Bike -->
+          <div class="bike-card selected" id="card-bike-starter" data-bike-id="starter">
+            <div>
+              <div class="bike-card-name" style="color: var(--cyan-neon);">STARTER BIKE</div>
+              <div class="bike-card-desc">Lightweight stunt chassis with agile balance.</div>
+            </div>
+            <div id="badge-bike-starter" class="bike-badge equipped">EQUIPPED</div>
+          </div>
+
+          <!-- Bike 2: Sport Bike -->
+          <div class="bike-card" id="card-bike-sport" data-bike-id="sport">
+            <div>
+              <div class="bike-card-name" style="color: var(--pink-neon);">SPORT BIKE</div>
+              <div class="bike-card-desc">Aerodynamic frame with higher top velocity.</div>
+            </div>
+            <div id="badge-bike-sport" class="bike-badge locked">🪙 150 COINS</div>
+          </div>
+
+          <!-- Bike 3: Heavy Cruiser -->
+          <div class="bike-card" id="card-bike-cruiser" data-bike-id="cruiser">
+            <div>
+              <div class="bike-card-name" style="color: var(--yellow-neon);">HEAVY CRUISER</div>
+              <div class="bike-card-desc">Torque beast with massive stunt rotation power.</div>
+            </div>
+            <div id="badge-bike-cruiser" class="bike-badge locked">🪙 300 COINS</div>
+          </div>
+        </div>
+
+        <!-- Selected Bike Preview & Upgrades (Prompt 1 & 2) -->
+        <div class="bike-details-box">
+          <canvas id="garagePreviewCanvas" width="480" height="130"></canvas>
+
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 id="selected-bike-title" style="font-size: 19px; font-weight: 800;">STARTER BIKE</h3>
+            <button id="btn-equip-or-unlock" class="neon-btn" style="padding: 8px 16px; font-size: 11px;">EQUIPPED</button>
+          </div>
+
+          <!-- Upgrades Matrix: Speed, Torque, Suspension (Prompt 1) -->
+          <div class="upgrade-matrix">
+            <!-- 1. Speed -->
+            <div class="upgrade-row">
+              <div class="upgrade-label-bar">
+                <span>SPEED (MAX VELOCITY)</span>
+                <span id="speed-level-label" style="color: var(--cyan-neon);">LVL 1/5</span>
+              </div>
+              <div class="upgrade-pip-track" id="track-speed">
+                <div class="upgrade-pip filled"></div>
+                <div class="upgrade-pip"></div>
+                <div class="upgrade-pip"></div>
+                <div class="upgrade-pip"></div>
+                <div class="upgrade-pip"></div>
+              </div>
+              <button id="btn-upgrade-speed" class="neon-btn yellow btn-upgrade-action">
+                BUY UPGRADE (COST: 50)
+              </button>
+            </div>
+
+            <!-- 2. Torque -->
+            <div class="upgrade-row">
+              <div class="upgrade-label-bar">
+                <span>TORQUE (FLIP ACCELERATION)</span>
+                <span id="torque-level-label" style="color: var(--pink-neon);">LVL 1/5</span>
+              </div>
+              <div class="upgrade-pip-track" id="track-torque">
+                <div class="upgrade-pip filled"></div>
+                <div class="upgrade-pip"></div>
+                <div class="upgrade-pip"></div>
+                <div class="upgrade-pip"></div>
+                <div class="upgrade-pip"></div>
+              </div>
+              <button id="btn-upgrade-torque" class="neon-btn yellow btn-upgrade-action">
+                BUY UPGRADE (COST: 50)
+              </button>
+            </div>
+
+            <!-- 3. Suspension -->
+            <div class="upgrade-row">
+              <div class="upgrade-label-bar">
+                <span>SUSPENSION (BOUNCE & STABILITY)</span>
+                <span id="suspension-level-label" style="color: var(--green-neon);">LVL 1/5</span>
+              </div>
+              <div class="upgrade-pip-track" id="track-suspension">
+                <div class="upgrade-pip filled"></div>
+                <div class="upgrade-pip"></div>
+                <div class="upgrade-pip"></div>
+                <div class="upgrade-pip"></div>
+                <div class="upgrade-pip"></div>
+              </div>
+              <button id="btn-upgrade-suspension" class="neon-btn yellow btn-upgrade-action">
+                BUY UPGRADE (COST: 50)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Garage Footer Bar (Prompt 1) -->
+      <div class="garage-footer-bar">
+        <button id="btn-garage-back" class="neon-btn pink">
+          ⬅ BACK TO MAIN MENU
+        </button>
+        <button id="btn-garage-launch" class="neon-btn">
+          ⚡ LAUNCH RACE
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         SCREEN 3: GAMEPLAY UI (Prompt 1, 2, 3, 4)
+    ========================================================== -->
+    <div id="screen-game" class="screen-view">
+      <!-- Game Canvas (Prompt 1: id='gameCanvas') -->
+      <canvas id="gameCanvas"></canvas>
+
+      <!-- In-Game HUD Layer -->
+      <div class="game-hud-layer">
+        <!-- Top Bar: Level: X & Score: 0 (Prompt 1 & 3) -->
+        <div class="hud-top-bar">
+          <div style="display: flex; gap: 10px;">
+            <div class="hud-card hud-level-pill" id="hud-level-container">
+              <span id="hud-level-val" class="hud-level-badge">LEVEL: 1</span>
+            </div>
+            <div class="hud-card">
+              <div style="font-size: 10px; color: #8b949e; letter-spacing: 1px;">SCORE</div>
+              <div id="hud-score-val" class="hud-score-box">0</div>
+            </div>
+            <div class="hud-card">
+              <span style="font-size: 16px;">🪙</span>
+              <span id="hud-run-coins" style="font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--yellow-neon);">0</span>
+            </div>
+          </div>
+
+          <!-- Progress to 20,000m Finish Line (Prompt 3) -->
+          <div class="hud-progress-container">
+            <div class="hud-progress-track">
+              <div id="gameProgressFill"></div>
+            </div>
+            <div class="hud-progress-caption">
+              <span id="hud-dist-val">0</span>m / 20000m FINISH
+            </div>
+          </div>
+
+          <div class="hud-right-dock">
+            <div class="hud-card" style="padding: 6px 14px;">
+              <span id="hud-speed-val" style="font-family: var(--font-mono); font-size: 20px; font-weight: 700;">0</span>
+              <span style="font-size: 10px; color: #66fcf1; letter-spacing: 1px;">KM/H</span>
+            </div>
+            <button id="btn-hud-share" class="hud-btn-icon" title="Share Game">🔗</button>
+            <button id="btn-hud-fullscreen" class="hud-btn-icon" title="Toggle Fullscreen">⛶</button>
+            <button id="btn-hud-menu" class="hud-btn-icon" title="Pause / Menu">⚙</button>
+          </div>
+        </div>
+
+        <!-- Stunt Banner (+500 FLIP! Prompt 4) -->
+        <div id="stuntBanner">
+          <div id="stuntTitle" class="stunt-banner-title">+500 FLIP!</div>
+          <div id="stuntPoints" class="stunt-banner-pts">+500 PTS</div>
+        </div>
+
+        <!-- Bottom Controls for Mobile & Desktop Hints -->
+        <div class="hud-bottom-bar">
+          <!-- Left Thumb: Tilt Back / Tilt Forward (A / D) -->
+          <div class="touch-controls-dock">
+            <button class="touch-btn pink" id="touchLeanBack" title="Tilt Back (A)">↺</button>
+            <button class="touch-btn pink" id="touchLeanFwd" title="Tilt Forward (D)">↻</button>
+          </div>
+
+          <!-- Desktop Key Hints -->
+          <div class="key-hints-container">
+            <div><span class="key-badge">▶</span> / <span class="key-badge">W</span> Gas</div>
+            <div><span class="key-badge">◀</span> / <span class="key-badge">S</span> Brake</div>
+            <div><span class="key-badge">A</span> / <span class="key-badge">D</span> Spin Flip</div>
+            <div><span class="key-badge">R</span> Restart</div>
+            <div><span class="key-badge">F</span> Fullscreen</div>
+          </div>
+
+          <!-- Right Thumb: Brake / Gas / Restart -->
+          <div class="touch-controls-dock">
+            <button class="touch-btn" id="touchBrake" title="Brake (S)">◀</button>
+            <button class="touch-btn" id="touchGas" title="Gas (W)">▶</button>
+            <button class="touch-btn" id="touchRestart" title="Restart (R)">🔄</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =======================================================
+           HIDDEN OVERLAY 1: CRASHED (Prompt 1 & 4)
+      ======================================================== -->
+      <div id="overlay-crashed" class="modal-overlay">
+        <div class="modal-card">
+          <div class="modal-title crash">CRASHED!</div>
+          <p id="crashed-reason-text" class="modal-subtitle">The chassis collided with the track!</p>
+
+          <div class="modal-stats-box">
+            <div>
+              <div class="modal-stat-label">RUN COINS</div>
+              <div id="modal-crash-coins" class="modal-stat-val" style="color: var(--yellow-neon);">+0</div>
+            </div>
+            <div>
+              <div class="modal-stat-label">TOTAL WALLET</div>
+              <div id="modal-crash-total" class="modal-stat-val" style="color: var(--green-neon);">0</div>
+            </div>
+            <div>
+              <div class="modal-stat-label">SCORE</div>
+              <div id="modal-crash-score" class="modal-stat-val" style="color: var(--cyan-neon);">0</div>
+            </div>
+          </div>
+
+          <div class="modal-btn-row">
+            <button id="btn-crashed-restart" class="neon-btn">
+              🔄 RESTART LEVEL (R)
+            </button>
+            <button id="btn-crashed-garage" class="neon-btn yellow">
+              🔧 GARAGE & UPGRADES
+            </button>
+            <button id="btn-crashed-menu" class="neon-btn pink">
+              🏠 MAIN MENU
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- =======================================================
+           HIDDEN OVERLAY 2: LEVEL COMPLETE (Prompt 1, 3, 4)
+      ======================================================== -->
+      <div id="overlay-level-complete" class="modal-overlay">
+        <div class="modal-card victory">
+          <div id="win-modal-title" class="modal-title win">LEVEL COMPLETE!</div>
+          <p id="win-modal-subtitle" class="modal-subtitle">You conquered the 20,000m neon highway!</p>
+
+          <div class="modal-stats-box">
+            <div>
+              <div class="modal-stat-label">LEVEL BONUS</div>
+              <div class="modal-stat-val" style="color: var(--yellow-neon);">+100 🪙</div>
+            </div>
+            <div>
+              <div class="modal-stat-label">TOTAL WALLET</div>
+              <div id="modal-win-total" class="modal-stat-val" style="color: var(--green-neon);">0</div>
+            </div>
+            <div>
+              <div class="modal-stat-label">SCORE</div>
+              <div id="modal-win-score" class="modal-stat-val" style="color: var(--cyan-neon);">0</div>
+            </div>
+          </div>
+
+          <div class="modal-btn-row">
+            <button id="btn-level-next" class="neon-btn green">
+              ⚡ NEXT LEVEL
+            </button>
+            <button id="btn-win-garage" class="neon-btn yellow">
+              🔧 GARAGE & UPGRADES
+            </button>
+            <button id="btn-win-menu" class="neon-btn pink">
+              🏠 MAIN MENU
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Master JavaScript: Physics, Logic, Levels, Flips -->
+  <script>
+    (function () {
+      'use strict';
+
+      // -------------------------------------------------------------
+      // 1. STATE MANAGER & LOCALSTORAGE PERSISTENCE (Prompt 1)
+      // -------------------------------------------------------------
+      const SAVE_STORAGE_KEY = 'neon_rider_extreme_save_v2';
+      const UPGRADE_COST = 50;
+
+      // 10 Distinct Neon Hex Colors (Prompt 3)
+      const LEVEL_COLORS = [
+        '#00f0ff', // Level 1: Electric Cyan
+        '#ff007f', // Level 2: Neon Magenta
+        '#39ff14', // Level 3: Toxic Green
+        '#ffe600', // Level 4: Cyber Yellow
+        '#ff5500', // Level 5: Plasma Orange
+        '#bf00ff', // Level 6: Hyper Violet
+        '#ff1493', // Level 7: Hot Pink
+        '#00bfff', // Level 8: Electric Sky
+        '#ff2a2a', // Level 9: Crimson Red
+        '#ffffff'  // Level 10: Prismatic Pure White
+      ];
+
+      const defaultSaveData = {
+        currentLevel: 1, // Default to 1, max 10 (Prompt 1)
+        totalCoins: 0,
+        selectedBike: 'starter',
+        bikes: {
+          starter: {
+            name: 'Starter Bike',
+            unlocked: true,
+            cost: 0,
+            color: '#00f0ff',
+            accent: '#ff007f',
+            wheelColor: '#ffffff',
+            speed: 1,
+            torque: 1,
+            suspension: 1
+          },
+          sport: {
+            name: 'Sport Bike',
+            unlocked: false,
+            cost: 150,
+            color: '#ff007f',
+            accent: '#00f0ff',
+            wheelColor: '#ffffff',
+            speed: 2,
+            torque: 1,
+            suspension: 1
+          },
+          cruiser: {
+            name: 'Heavy Cruiser',
+            unlocked: false,
+            cost: 300,
+            color: '#ffe600',
+            accent: '#ff5500',
+            wheelColor: '#ffffff',
+            speed: 1,
+            torque: 2,
+            suspension: 2
+          }
+        }
+      };
+
+      let gameSave = loadSaveData();
+
+      function loadSaveData() {
+        try {
+          const raw = localStorage.getItem(SAVE_STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            const loaded = {
+              ...defaultSaveData,
+              ...parsed,
+              bikes: {
+                starter: { ...defaultSaveData.bikes.starter, ...(parsed.bikes && parsed.bikes.starter) },
+                sport: { ...defaultSaveData.bikes.sport, ...(parsed.bikes && parsed.bikes.sport) },
+                cruiser: { ...defaultSaveData.bikes.cruiser, ...(parsed.bikes && parsed.bikes.cruiser) }
+              }
+            };
+            // Clamp level between 1 and 10 (Prompt 1)
+            loaded.currentLevel = Math.max(1, Math.min(10, parseInt(loaded.currentLevel, 10) || 1));
+            return loaded;
+          }
+        } catch (e) {
+          console.warn('Could not read localStorage:', e);
+        }
+        return JSON.parse(JSON.stringify(defaultSaveData));
+      }
+
+      function persistSaveData() {
+        try {
+          localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(gameSave));
+        } catch (e) {
+          console.error('Failed to write localStorage:', e);
+        }
+      }
+
+      function getCurrentLevelColor() {
+        const lvlIdx = Math.max(0, Math.min(9, (gameSave.currentLevel || 1) - 1));
+        return LEVEL_COLORS[lvlIdx];
+      }
+
+      // -------------------------------------------------------------
+      // 2. UI SCREEN NAVIGATION & MANAGER (Prompt 1)
+      // -------------------------------------------------------------
+      const screens = {
+        mainMenu: document.getElementById('screen-main-menu'),
+        garage: document.getElementById('screen-garage'),
+        game: document.getElementById('screen-game')
+      };
+
+      let activeScreenName = 'mainMenu';
+
+      function showScreen(screenKey) {
+        Object.keys(screens).forEach(key => {
+          screens[key].classList.toggle('active', key === screenKey);
+        });
+        activeScreenName = screenKey;
+
+        if (screenKey === 'mainMenu') {
+          updateMainMenuUI();
+        } else if (screenKey === 'garage') {
+          updateGarageUI();
+        } else if (screenKey === 'game') {
+          resizeCanvas();
+        }
+      }
+
+      function updateMainMenuUI() {
+        const lvl = gameSave.currentLevel || 1;
+        const lvlColor = getCurrentLevelColor();
+
+        // Level readout in main menu (Prompt 1)
+        const lvlDisplay = document.getElementById('main-level-display');
+        lvlDisplay.textContent = `LEVEL ${lvl} / 10`;
+        lvlDisplay.style.color = lvlColor;
+        lvlDisplay.style.textShadow = `0 0 16px ${lvlColor}`;
+
+        const lvlCard = document.getElementById('main-level-card');
+        lvlCard.style.borderColor = lvlColor;
+        lvlCard.style.boxShadow = `0 0 30px ${lvlColor}55`;
+
+        // Render 10 Level Pips (Prompt 1 & 3)
+        const pipsTrack = document.getElementById('main-level-pips');
+        pipsTrack.innerHTML = '';
+        for (let i = 1; i <= 10; i++) {
+          const pip = document.createElement('div');
+          pip.className = 'level-pip';
+          if (i === lvl) {
+            pip.className = 'level-pip active';
+            pip.style.background = lvlColor;
+            pip.style.borderColor = '#fff';
+            pip.style.boxShadow = `0 0 10px ${lvlColor}`;
+          } else if (i < lvl) {
+            pip.className = 'level-pip cleared';
+          }
+          pipsTrack.appendChild(pip);
+        }
+
+        // Total coins
+        document.getElementById('main-total-coins').textContent = gameSave.totalCoins;
+      }
+
+      // -------------------------------------------------------------
+      // 3. GARAGE LOGIC & UPGRADES (Prompt 1 & 2)
+      // -------------------------------------------------------------
+      let viewingBikeId = gameSave.selectedBike || 'starter';
+
+      function updateGarageUI() {
+        document.getElementById('garage-total-coins').textContent = gameSave.totalCoins;
+
+        const bikeIds = ['starter', 'sport', 'cruiser'];
+        bikeIds.forEach(id => {
+          const card = document.getElementById(`card-bike-${id}`);
+          const badge = document.getElementById(`badge-bike-${id}`);
+          const bikeData = gameSave.bikes[id];
+
+          if (card) card.classList.toggle('selected', id === viewingBikeId);
+
+          if (badge) {
+            if (gameSave.selectedBike === id) {
+              badge.className = 'bike-badge equipped';
+              badge.textContent = 'EQUIPPED';
+            } else if (bikeData.unlocked) {
+              badge.className = 'bike-badge unlocked';
+              badge.textContent = 'UNLOCKED';
+            } else {
+              badge.className = 'bike-badge locked';
+              badge.textContent = `🪙 ${bikeData.cost} COINS`;
+            }
+          }
+        });
+
+        const activeBike = gameSave.bikes[viewingBikeId];
+        document.getElementById('selected-bike-title').textContent = activeBike.name;
+        document.getElementById('selected-bike-title').style.color = activeBike.color;
+
+        // Equip / Unlock Button
+        const equipUnlockBtn = document.getElementById('btn-equip-or-unlock');
+        if (gameSave.selectedBike === viewingBikeId) {
+          equipUnlockBtn.textContent = 'EQUIPPED';
+          equipUnlockBtn.className = 'neon-btn disabled';
+        } else if (activeBike.unlocked) {
+          equipUnlockBtn.textContent = 'EQUIP BIKE';
+          equipUnlockBtn.className = 'neon-btn';
+        } else {
+          equipUnlockBtn.textContent = `UNLOCK (🪙 ${activeBike.cost})`;
+          equipUnlockBtn.className = gameSave.totalCoins >= activeBike.cost ? 'neon-btn yellow' : 'neon-btn disabled';
+        }
+
+        // Upgrade Matrix (Speed, Torque, Suspension)
+        ['speed', 'torque', 'suspension'].forEach(stat => {
+          const level = activeBike[stat];
+          const label = document.getElementById(`${stat}-level-label`);
+          if (label) label.textContent = `LVL ${level}/5`;
+
+          const track = document.getElementById(`track-${stat}`);
+          if (track) {
+            const pips = track.querySelectorAll('.upgrade-pip');
+            pips.forEach((pip, idx) => {
+              pip.classList.toggle('filled', idx < level);
+            });
+          }
+
+          const btn = document.getElementById(`btn-upgrade-${stat}`);
+          if (btn) {
+            if (level >= 5) {
+              btn.textContent = 'MAX TIER';
+              btn.className = 'neon-btn disabled btn-upgrade-action';
+            } else {
+              btn.textContent = `BUY UPGRADE (COST: ${UPGRADE_COST})`;
+              if (activeBike.unlocked && gameSave.totalCoins >= UPGRADE_COST) {
+                btn.className = 'neon-btn yellow btn-upgrade-action';
+              } else {
+                btn.className = 'neon-btn disabled btn-upgrade-action';
+              }
+            }
+          }
+        });
+
+        drawGaragePreview();
+      }
+
+      // Live 2D Canvas Bike Preview in Garage
+      const garageCanvas = document.getElementById('garagePreviewCanvas');
+      const garageCtx = garageCanvas.getContext('2d');
+
+      function drawGaragePreview() {
+        const w = garageCanvas.width;
+        const h = garageCanvas.height;
+        garageCtx.clearRect(0, 0, w, h);
+
+        const activeBike = gameSave.bikes[viewingBikeId];
+        const lvlColor = getCurrentLevelColor();
+        const cx = w / 2;
+        const cy = h / 2 + 10;
+
+        garageCtx.save();
+
+        // Floor ground neon line (matching current level color!)
+        garageCtx.strokeStyle = lvlColor;
+        garageCtx.shadowColor = lvlColor;
+        garageCtx.shadowBlur = 10;
+        garageCtx.lineWidth = 2.5;
+        garageCtx.beginPath();
+        garageCtx.moveTo(40, cy + 30);
+        garageCtx.lineTo(w - 40, cy + 30);
+        garageCtx.stroke();
+
+        // Struts
+        garageCtx.strokeStyle = activeBike.accent || '#ff007f';
+        garageCtx.lineWidth = 3.5;
+        garageCtx.beginPath();
+        garageCtx.moveTo(cx - 42, cy - 8);
+        garageCtx.lineTo(cx - 42, cy + 20);
+        garageCtx.moveTo(cx + 42, cy - 8);
+        garageCtx.lineTo(cx + 42, cy + 20);
+        garageCtx.stroke();
+
+        // Wheels
+        [-42, 42].forEach(xOff => {
+          garageCtx.save();
+          garageCtx.translate(cx + xOff, cy + 20);
+          garageCtx.strokeStyle = activeBike.wheelColor || '#ffffff';
+          garageCtx.lineWidth = 3.5;
+          garageCtx.shadowColor = '#ffffff';
+          garageCtx.shadowBlur = 10;
+          garageCtx.beginPath();
+          garageCtx.arc(0, 0, 18, 0, Math.PI * 2);
+          garageCtx.stroke();
+
+          garageCtx.fillStyle = activeBike.accent;
+          garageCtx.beginPath();
+          garageCtx.arc(0, 0, 4, 0, Math.PI * 2);
+          garageCtx.fill();
+          garageCtx.restore();
+        });
+
+        // Chassis polygon with Level neon glow!
+        garageCtx.save();
+        garageCtx.translate(cx, cy);
+        garageCtx.shadowColor = lvlColor;
+        garageCtx.shadowBlur = 22;
+        garageCtx.fillStyle = activeBike.color;
+        garageCtx.strokeStyle = lvlColor;
+        garageCtx.lineWidth = 2.5;
+
+        garageCtx.beginPath();
+        garageCtx.moveTo(-50, 6);
+        garageCtx.lineTo(-40, -12);
+        garageCtx.lineTo(-14, -12);
+        garageCtx.lineTo(10, -22);
+        garageCtx.lineTo(40, -18);
+        garageCtx.lineTo(52, 2);
+        garageCtx.lineTo(36, 14);
+        garageCtx.lineTo(-24, 14);
+        garageCtx.closePath();
+        garageCtx.fill();
+        garageCtx.stroke();
+
+        // Cockpit
+        garageCtx.fillStyle = lvlColor;
+        garageCtx.beginPath();
+        garageCtx.arc(0, -2, 4, 0, Math.PI * 2);
+        garageCtx.fill();
+
+        garageCtx.restore();
+        garageCtx.restore();
+      }
+
+      // Garage Interactions
+      ['starter', 'sport', 'cruiser'].forEach(id => {
+        const card = document.getElementById(`card-bike-${id}`);
+        if (card) {
+          card.addEventListener('click', () => {
+            viewingBikeId = id;
+            updateGarageUI();
+          });
+        }
+      });
+
+      document.getElementById('btn-equip-or-unlock').addEventListener('click', () => {
+        const bike = gameSave.bikes[viewingBikeId];
+        if (bike.unlocked) {
+          gameSave.selectedBike = viewingBikeId;
+          persistSaveData();
+          updateGarageUI();
+        } else if (gameSave.totalCoins >= bike.cost) {
+          gameSave.totalCoins -= bike.cost;
+          bike.unlocked = true;
+          gameSave.selectedBike = viewingBikeId;
+          persistSaveData();
+          updateGarageUI();
+          playFanfareSound();
+        }
+      });
+
+      function buyUpgrade(statKey) {
+        const bike = gameSave.bikes[viewingBikeId];
+        if (!bike.unlocked || bike[statKey] >= 5 || gameSave.totalCoins < UPGRADE_COST) return;
+
+        gameSave.totalCoins -= UPGRADE_COST;
+        bike[statKey] += 1;
+        persistSaveData();
+        updateGarageUI();
+        playCoinSound();
+      }
+
+      document.getElementById('btn-upgrade-speed').addEventListener('click', () => buyUpgrade('speed'));
+      document.getElementById('btn-upgrade-torque').addEventListener('click', () => buyUpgrade('torque'));
+      document.getElementById('btn-upgrade-suspension').addEventListener('click', () => buyUpgrade('suspension'));
+
+      // -------------------------------------------------------------
+      // 4. SYNTHESIZED WEB AUDIO API (Zero external assets)
+      // -------------------------------------------------------------
+      let audioCtx = null;
+      let soundEnabled = true;
+      let engineOsc = null;
+      let engineGain = null;
+
+      function initAudio() {
+        if (audioCtx) {
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+          return;
+        }
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          audioCtx = new AudioContext();
+
+          engineOsc = audioCtx.createOscillator();
+          engineOsc.type = 'sawtooth';
+          engineOsc.frequency.setValueAtTime(50, audioCtx.currentTime);
+
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(420, audioCtx.currentTime);
+
+          engineGain = audioCtx.createGain();
+          engineGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+
+          engineOsc.connect(filter);
+          filter.connect(engineGain);
+          engineGain.connect(audioCtx.destination);
+          engineOsc.start();
+        } catch (e) {
+          console.warn('Web Audio error:', e);
+        }
+      }
+
+      function playCoinSound() {
+        if (!audioCtx || !soundEnabled) return;
+        try {
+          const now = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.linearRampToValueAtTime(1300, now + 0.1);
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.12);
+          osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+        } catch (e) {}
+      }
+
+      function playCrashSound() {
+        if (!audioCtx || !soundEnabled) return;
+        try {
+          const now = audioCtx.currentTime;
+          const duration = 0.9;
+          const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+          const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+          }
+
+          const noise = audioCtx.createBufferSource();
+          noise.buffer = buffer;
+
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.setValueAtTime(380, now);
+          filter.frequency.exponentialRampToValueAtTime(25, now + duration);
+
+          const gain = audioCtx.createGain();
+          gain.gain.setValueAtTime(0.48, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(audioCtx.destination);
+
+          noise.start(now);
+          noise.stop(now + duration);
+          noise.onended = () => { noise.disconnect(); filter.disconnect(); gain.disconnect(); };
+        } catch (e) {}
+      }
+
+      function playFanfareSound() {
+        if (!audioCtx || !soundEnabled) return;
+        try {
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          const now = audioCtx.currentTime;
+          notes.forEach((f, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            const t = now + i * 0.08;
+            osc.frequency.setValueAtTime(f, t);
+            gain.gain.setValueAtTime(0.22, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + 0.35);
+          });
+        } catch (e) {}
+      }
+
+      const soundBtn = document.getElementById('btn-sound-main');
+      soundBtn.addEventListener('click', () => {
+        initAudio();
+        soundEnabled = !soundEnabled;
+        soundBtn.textContent = soundEnabled ? '🔊 SOUND: ON' : '🔇 SOUND: OFF';
+        if (engineGain && audioCtx) {
+          engineGain.gain.setValueAtTime(soundEnabled ? 0.04 : 0, audioCtx.currentTime);
+        }
+      });
+
+      // -------------------------------------------------------------
+      // 5. MATTER.JS PHYSICS & ENGINE (Prompt 2)
+      // -------------------------------------------------------------
+      const {
+        Engine,
+        Bodies,
+        Body,
+        Composite,
+        Constraint,
+        Events,
+        Vector
+      } = Matter;
+
+      const engine = Engine.create({
+        gravity: { x: 0, y: 1.15, scale: 0.001 }
+      });
+
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      let viewWidth = window.innerWidth;
+      let viewHeight = window.innerHeight;
+      let pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
+      function resizeCanvas() {
+        viewWidth = window.innerWidth;
+        viewHeight = window.innerHeight;
+        pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = viewWidth * pixelRatio;
+        canvas.height = viewHeight * pixelRatio;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      // -------------------------------------------------------------
+      // 6. 10-LEVEL PROCEDURAL TERRAIN, GAPS & SENSORS (Prompt 3)
+      // -------------------------------------------------------------
+      const FINISH_LINE_X = 20000; // Finish line sensor at X = 20000 (Prompt 3)
+      const terrainBodies = [];
+      const terrainWaypoints = [];
+      const coinBodies = [];
+      let finishLineBody = null;
+
+      function buildLevelTerrain() {
+        // Clear previous bodies from world
+        terrainBodies.forEach(b => Composite.remove(engine.world, b));
+        coinBodies.forEach(b => Composite.remove(engine.world, b));
+        terrainBodies.length = 0;
+        terrainWaypoints.length = 0;
+        coinBodies.length = 0;
+
+        const currentLvl = gameSave.currentLevel || 1;
+        const currentNeon = getCurrentLevelColor();
+
+        // Prompt 3: As Level increases (1 to 10), amplitude of sine wave increases
+        // Level 1 has gentle slopes (~55px amp). Level 10 has extreme ramps (~255px amp)!
+        const baseAmplitude = 55 + (currentLvl - 1) * 22;
+        const baseY = 650;
+        const segmentStep = 60;
+        const startX = -600;
+        const endX = FINISH_LINE_X + 1000;
+
+        // Gap / Chasm parameters (Prompt 3: Level >= 2 introduces chasms 200 to 600px wide)
+        const hasGaps = currentLvl >= 2;
+        const gapWidth = Math.min(600, 200 + (currentLvl - 2) * 50); // 200px at Lvl 2 up to 600px at Lvl 10
+        const gapInterval = Math.max(1600, 3200 - (currentLvl - 2) * 200); // more frequent at higher levels
+
+        // Generate gap intervals in advance so terrain cleanly jumps over them
+        const gapsList = [];
+        if (hasGaps) {
+          let nextGapX = 1800 + Math.floor(Math.random() * 400);
+          while (nextGapX < FINISH_LINE_X - 1200) {
+            gapsList.push({ startX: nextGapX, endX: nextGapX + gapWidth });
+            nextGapX += gapInterval + Math.floor(Math.random() * 600) - 300;
+          }
+        }
+
+        // Build continuous waypoint segments
+        let currentSegment = [];
+
+        for (let x = startX; x <= endX; x += segmentStep) {
+          // Check if x falls inside an empty chasm (gap)
+          const inGap = gapsList.some(g => x >= g.startX && x <= g.endX);
+
+          if (inGap) {
+            // End current terrain segment at chasm start
+            if (currentSegment.length > 1) {
+              terrainWaypoints.push([...currentSegment]);
+            }
+            currentSegment = [];
+            continue;
+          }
+
+          let y = baseY;
+
+          // Safe flat launch zone (X <= 800)
+          if (x > 800 && x < FINISH_LINE_X) {
+            // Check if approaching a gap: create an upward kicker launch ramp!
+            const approachingGap = gapsList.find(g => x >= g.startX - 300 && x < g.startX);
+            if (approachingGap) {
+              const rampProgress = (x - (approachingGap.startX - 300)) / 300;
+              // Ramp lifts up by 80-120px to launch bike across chasm
+              y = baseY - Math.sin(rampProgress * Math.PI * 0.5) * (baseAmplitude * 0.85);
+            } else {
+              // Procedural Sine Waves (Prompt 3)
+              const wave1 = Math.sin(x * 0.0026) * baseAmplitude;
+              const wave2 = Math.sin(x * 0.0068) * (baseAmplitude * 0.45);
+              const wave3 = Math.sin(x * 0.014) * (baseAmplitude * 0.22);
+              y = baseY + wave1 + wave2 + wave3;
+            }
+
+            // Scatter collectible coins (higher probability on peaks)
+            if (x % 180 === 0 && !approachingGap) {
+              spawnCoin(x, y - 50);
+            }
+          } else if (x >= FINISH_LINE_X) {
+            y = baseY; // Flat victory landing
+          }
+
+          currentSegment.push({ x, y });
+        }
+
+        if (currentSegment.length > 1) {
+          terrainWaypoints.push([...currentSegment]);
+        }
+
+        // Convert waypoints into static Matter.js bodies
+        const segmentThickness = 65;
+        terrainWaypoints.forEach(segment => {
+          for (let i = 0; i < segment.length - 1; i++) {
+            const p1 = segment[i];
+            const p2 = segment[i + 1];
+
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const length = Math.hypot(dx, dy);
+            const angle = Math.atan2(dy, dx);
+            const midX = (p1.x + p2.x) / 2;
+            const midY = (p1.y + p2.y) / 2;
+
+            const rect = Bodies.rectangle(midX, midY, length + 4, segmentThickness, {
+              isStatic: true,
+              angle: angle,
+              friction: 0.85,
+              restitution: 0.1,
+              label: 'ground'
+            });
+            rect.segmentColor = currentNeon;
+            rect.p1 = p1;
+            rect.p2 = p2;
+            terrainBodies.push(rect);
+
+            // Junction pin to prevent wheel clipping
+            const pin = Bodies.circle(p1.x, p1.y, segmentThickness * 0.45, {
+              isStatic: true,
+              friction: 0.85,
+              restitution: 0.1,
+              label: 'ground'
+            });
+            pin.segmentColor = currentNeon;
+            terrainBodies.push(pin);
+          }
+        });
+
+        // Left Boundary Wall
+        const leftWall = Bodies.rectangle(startX - 50, baseY - 300, 60, 1800, {
+          isStatic: true,
+          label: 'boundary'
+        });
+        terrainBodies.push(leftWall);
+
+        // Massive Vertical Glowing Sensor at X = 20000 (Prompt 3)
+        finishLineBody = Bodies.rectangle(FINISH_LINE_X, baseY - 400, 60, 1200, {
+          isStatic: true,
+          isSensor: true,
+          label: 'finishLine'
+        });
+        terrainBodies.push(finishLineBody);
+
+        Composite.add(engine.world, terrainBodies);
+      }
+
+      function spawnCoin(x, y) {
+        const coin = Bodies.circle(x, y, 14, {
+          isStatic: true,
+          isSensor: true,
+          label: 'coin'
+        });
+        coin.coinCollected = false;
+        coinBodies.push(coin);
+        Composite.add(engine.world, coin);
+      }
+
+      // -------------------------------------------------------------
+      // 7. LIGHTER STUNT MOTORBIKE & UPGRADES (Prompt 2)
+      // -------------------------------------------------------------
+      let vehicleComposite = null;
+      let chassis = null;
+      let rearWheel = null;
+      let frontWheel = null;
+      let rearSuspension = null;
+      let frontSuspension = null;
+      let rearSupport = null;
+      let frontSupport = null;
+      let axleLink = null;
+
+      const bikeGroup = Body.nextGroup(true);
+
+      // Active Physics Profile governed by Garage Upgrades (Prompt 2)
+      let activePhysics = {
+        maxSpeed: 0.52,
+        motorTorque: 0.045,
+        stiffness: 0.95,
+        damping: 0.1,
+        color: '#00f0ff',
+        accent: '#ff007f',
+        wheelColor: '#ffffff'
+      };
+
+      function spawnMotorbike(spawnX = 150, spawnY = 480) {
+        if (vehicleComposite) {
+          Composite.remove(engine.world, vehicleComposite);
+        }
+
+        const bikeId = gameSave.selectedBike || 'starter';
+        const bikeData = gameSave.bikes[bikeId];
+        const currentNeon = getCurrentLevelColor();
+
+        // Apply Garage Upgrades (Prompt 2)
+        activePhysics.maxSpeed = 0.48 + bikeData.speed * 0.055;
+        activePhysics.motorTorque = 0.04 + bikeData.torque * 0.015;
+        activePhysics.stiffness = 0.88 + bikeData.suspension * 0.024;
+        activePhysics.damping = 0.08 + bikeData.suspension * 0.01;
+        activePhysics.color = bikeData.color;
+        activePhysics.accent = bikeData.accent;
+        activePhysics.wheelColor = bikeData.wheelColor;
+
+        // 1. Chassis Body (Prompt 2):
+        // CRUCIAL: "Set the density of the chassis to be very low (e.g., 0.001) and increase
+        // the restitution slightly so the bike feels light, bouncy, and floaty—perfect for stunts."
+        const chassisW = 96;
+        const chassisH = 24;
+        chassis = Bodies.rectangle(spawnX, spawnY, chassisW, chassisH, {
+          collisionFilter: { group: bikeGroup },
+          density: 0.001,      // Extremely light per Prompt 2
+          restitution: 0.28,   // Bouncy and floaty for stunts per Prompt 2
+          friction: 0.5,
+          label: 'chassis'
+        });
+
+        // Center of mass slightly lowered for natural recovery
+        Body.setCentre(chassis, { x: 0, y: 12 }, true);
+
+        // 2. Wheels: Circles with grip
+        const wheelRadius = 22;
+        const wheelOffsetX = 42;
+        const wheelOffsetY = 24;
+
+        rearWheel = Bodies.circle(spawnX - wheelOffsetX, spawnY + wheelOffsetY, wheelRadius, {
+          collisionFilter: { group: bikeGroup },
+          density: 0.0015,
+          friction: 0.85,
+          frictionStatic: 1.2,
+          restitution: 0.22,
+          label: 'rearWheel'
+        });
+
+        frontWheel = Bodies.circle(spawnX + wheelOffsetX, spawnY + wheelOffsetY, wheelRadius, {
+          collisionFilter: { group: bikeGroup },
+          density: 0.0015,
+          friction: 0.85,
+          frictionStatic: 1.2,
+          restitution: 0.22,
+          label: 'frontWheel'
+        });
+
+        // 3. Triangulated Suspension Constraints
+        rearSuspension = Constraint.create({
+          bodyA: chassis,
+          pointA: { x: -wheelOffsetX, y: 6 },
+          bodyB: rearWheel,
+          pointB: { x: 0, y: 0 },
+          stiffness: activePhysics.stiffness,
+          damping: activePhysics.damping,
+          length: wheelOffsetY - 6
+        });
+
+        rearSupport = Constraint.create({
+          bodyA: chassis,
+          pointA: { x: -wheelOffsetX + 30, y: 10 },
+          bodyB: rearWheel,
+          pointB: { x: 0, y: 0 },
+          stiffness: activePhysics.stiffness,
+          damping: activePhysics.damping,
+          length: Math.hypot(30, wheelOffsetY - 10)
+        });
+
+        frontSuspension = Constraint.create({
+          bodyA: chassis,
+          pointA: { x: wheelOffsetX, y: 6 },
+          bodyB: frontWheel,
+          pointB: { x: 0, y: 0 },
+          stiffness: activePhysics.stiffness,
+          damping: activePhysics.damping,
+          length: wheelOffsetY - 6
+        });
+
+        frontSupport = Constraint.create({
+          bodyA: chassis,
+          pointA: { x: wheelOffsetX - 30, y: 10 },
+          bodyB: frontWheel,
+          pointB: { x: 0, y: 0 },
+          stiffness: activePhysics.stiffness,
+          damping: activePhysics.damping,
+          length: Math.hypot(30, wheelOffsetY - 10)
+        });
+
+        axleLink = Constraint.create({
+          bodyA: rearWheel,
+          bodyB: frontWheel,
+          stiffness: activePhysics.stiffness,
+          damping: activePhysics.damping,
+          length: wheelOffsetX * 2
+        });
+
+        vehicleComposite = Composite.create({ label: 'motorbike' });
+        Composite.add(vehicleComposite, [
+          chassis,
+          rearWheel,
+          frontWheel,
+          rearSuspension,
+          frontSuspension,
+          rearSupport,
+          frontSupport,
+          axleLink
+        ]);
+
+        Composite.add(engine.world, vehicleComposite);
+
+        // Reset flight tracking & game states
+        runCoins = 0;
+        document.getElementById('hud-run-coins').textContent = '0';
+        runScore = 0;
+        document.getElementById('hud-score-val').textContent = '0';
+        isCrashed = false;
+        isVictory = false;
+        isAirborne = false;
+        airborneRot = 0;
+        lastAngle = chassis.angle;
+
+        // Update HUD Top Bar Level Display (Prompt 1 & 3)
+        const lvl = gameSave.currentLevel || 1;
+        const hudLvl = document.getElementById('hud-level-val');
+        hudLvl.textContent = `LEVEL: ${lvl}`;
+        hudLvl.style.color = currentNeon;
+        hudLvl.style.textShadow = `0 0 12px ${currentNeon}`;
+        document.getElementById('hud-level-container').style.borderColor = currentNeon;
+
+        // Hide overlays
+        document.getElementById('overlay-crashed').classList.remove('active');
+        document.getElementById('overlay-level-complete').classList.remove('active');
+
+        // Resume physics
+        engine.enabled = true;
+      }
+
+      // -------------------------------------------------------------
+      // 8. CONTROLS (Prompt 2: Gas, Brake, Torque on A/D)
+      // -------------------------------------------------------------
+      const input = {
+        gas: false,      // Right Arrow / W
+        brake: false,    // Left Arrow / S
+        leanBack: false, // A
+        leanFwd: false   // D
+      };
+
+      window.addEventListener('keydown', (e) => {
+        initAudio();
+
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+          e.preventDefault();
+        }
+
+        // Right Arrow applies forward velocity to back wheel (Prompt 2)
+        if (e.code === 'ArrowRight' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+          input.gas = true;
+        }
+        // Left Arrow brakes (Prompt 2)
+        if (e.code === 'ArrowLeft' || e.code === 'KeyS' || e.code === 'ArrowDown') {
+          input.brake = true;
+        }
+        // 'A' and 'D' keys apply torque to chassis for flips (Prompt 2)
+        if (e.code === 'KeyA') {
+          input.leanBack = true;
+        }
+        if (e.code === 'KeyD') {
+          input.leanFwd = true;
+        }
+
+        // Quick restart on R
+        if (e.code === 'KeyR' && activeScreenName === 'game') {
+          restartLevel();
+        }
+
+        // Fullscreen on F
+        if (e.code === 'KeyF') {
+          toggleFullscreen();
+        }
+      });
+
+      window.addEventListener('keyup', (e) => {
+        if (e.code === 'ArrowRight' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+          input.gas = false;
+        }
+        if (e.code === 'ArrowLeft' || e.code === 'KeyS' || e.code === 'ArrowDown') {
+          input.brake = false;
+        }
+        if (e.code === 'KeyA') {
+          input.leanBack = false;
+        }
+        if (e.code === 'KeyD') {
+          input.leanFwd = false;
+        }
+      });
+
+      // Mobile Touch Buttons
+      function bindTouchButton(id, prop) {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        const start = (e) => {
+          e.preventDefault();
+          initAudio();
+          input[prop] = true;
+          btn.classList.add('active');
+        };
+        const end = (e) => {
+          e.preventDefault();
+          input[prop] = false;
+          btn.classList.remove('active');
+        };
+        btn.addEventListener('mousedown', start);
+        window.addEventListener('mouseup', end);
+        btn.addEventListener('touchstart', start, { passive: false });
+        window.addEventListener('touchend', end, { passive: false });
+      }
+
+      bindTouchButton('touchGas', 'gas');
+      bindTouchButton('touchBrake', 'brake');
+      bindTouchButton('touchLeanBack', 'leanBack');
+      bindTouchButton('touchLeanFwd', 'leanFwd');
+      document.getElementById('touchRestart').addEventListener('click', (e) => {
+        e.preventDefault();
+        restartLevel();
+      });
+
+      // -------------------------------------------------------------
+      // 9. COLLISIONS, COINS, CRASHES & ADVANCING (Prompt 4)
+      // -------------------------------------------------------------
+      let runCoins = 0;
+      let runScore = 0;
+      let isCrashed = false;
+      let isVictory = false;
+      let isAirborne = false;
+      let airborneRot = 0;
+      let lastAngle = 0;
+
+      Events.on(engine, 'collisionStart', (event) => {
+        const pairs = event.pairs;
+
+        for (let i = 0; i < pairs.length; i++) {
+          const { bodyA, bodyB } = pairs[i];
+
+          // Coin Collection
+          const coinCandidate = bodyA.label === 'coin' ? bodyA : (bodyB.label === 'coin' ? bodyB : null);
+          const bikeCandidate = (bodyA === chassis || bodyA === rearWheel || bodyA === frontWheel) ? bodyA :
+                                ((bodyB === chassis || bodyB === rearWheel || bodyB === frontWheel) ? bodyB : null);
+
+          if (coinCandidate && bikeCandidate && !coinCandidate.coinCollected) {
+            coinCandidate.coinCollected = true;
+            Composite.remove(engine.world, coinCandidate);
+
+            runCoins += 5;
+            document.getElementById('hud-run-coins').textContent = runCoins;
+            playCoinSound();
+
+            // Spawn gold particle sparks
+            for (let k = 0; k < 10; k++) {
+              particles.push({
+                x: coinCandidate.position.x,
+                y: coinCandidate.position.y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6 - 2,
+                radius: Math.random() * 4 + 2,
+                color: '#ffe600',
+                life: 1.0,
+                decay: 0.04
+              });
+            }
+          }
+
+          // Ground Collision Check (Prompt 4: Chassis touches terrain -> CRASH)
+          const groundCandidate = bodyA.label === 'ground' ? bodyA : (bodyB.label === 'ground' ? bodyB : null);
+          if (groundCandidate && !isCrashed && !isVictory) {
+            if (bodyA === chassis || bodyB === chassis) {
+              handleGameOver('The chassis collided with the track!');
+              return;
+            }
+          }
+
+          // Finish Line Sensor (Prompt 4: Bike touches sensor at X = 20000 -> Level Complete)
+          if (!isVictory && !isCrashed) {
+            if ((bodyA === finishLineBody && bikeCandidate) || (bodyB === finishLineBody && bikeCandidate)) {
+              handleLevelComplete();
+            }
+          }
+        }
+      });
+
+      // Prompt 4: Crashing
+      function handleGameOver(reason = 'The chassis collided with the track!') {
+        if (isCrashed) return;
+        isCrashed = true;
+        playCrashSound();
+
+        // Save coins earned in run
+        gameSave.totalCoins += runCoins;
+        persistSaveData();
+
+        // Explosion particles
+        if (chassis) {
+          const currentNeon = getCurrentLevelColor();
+          for (let k = 0; k < 35; k++) {
+            particles.push({
+              x: chassis.position.x,
+              y: chassis.position.y,
+              vx: (Math.random() - 0.5) * 14,
+              vy: (Math.random() - 0.5) * 14 - 3,
+              radius: Math.random() * 6 + 3,
+              color: Math.random() > 0.5 ? currentNeon : '#ff007f',
+              life: 1.0,
+              decay: 0.025
+            });
+          }
+        }
+
+        // Show 'CRASHED' overlay (Prompt 4)
+        document.getElementById('crashed-reason-text').textContent = reason;
+        document.getElementById('modal-crash-coins').textContent = `+${runCoins} 🪙`;
+        document.getElementById('modal-crash-total').textContent = `${gameSave.totalCoins} 🪙`;
+        document.getElementById('modal-crash-score').textContent = runScore;
+        document.getElementById('overlay-crashed').classList.add('active');
+      }
+
+      // Prompt 4: Level Progression
+      function handleLevelComplete() {
+        if (isVictory || isCrashed) return;
+        isVictory = true;
+        playFanfareSound();
+
+        // Pause physics engine (Prompt 4)
+        engine.enabled = false;
+
+        const currentLvl = gameSave.currentLevel || 1;
+        const levelBonus = 100;
+        gameSave.totalCoins += (runCoins + levelBonus);
+
+        // Increment Level in localStorage (cap at 10 per Prompt 4)
+        if (gameSave.currentLevel < 10) {
+          gameSave.currentLevel += 1;
+        }
+        persistSaveData();
+
+        // Configure Victory Modal
+        const winTitle = document.getElementById('win-modal-title');
+        const winSubtitle = document.getElementById('win-modal-subtitle');
+        const nextBtn = document.getElementById('btn-level-next');
+
+        if (currentLvl >= 10) {
+          winTitle.textContent = '🏆 CAMPAIGN COMPLETE!';
+          winSubtitle.textContent = 'You conquered all 10 extreme neon levels! Master stunt champion!';
+          nextBtn.textContent = '⚡ REPLAY LEVEL 10';
+        } else {
+          winTitle.textContent = `LEVEL ${currentLvl} COMPLETE!`;
+          winSubtitle.textContent = `You conquered the 20,000m track! Advancing to Level ${gameSave.currentLevel}...`;
+          nextBtn.textContent = `⚡ NEXT LEVEL (LEVEL ${gameSave.currentLevel})`;
+        }
+
+        document.getElementById('modal-win-total').textContent = `${gameSave.totalCoins} 🪙`;
+        document.getElementById('modal-win-score').textContent = runScore;
+        document.getElementById('overlay-level-complete').classList.add('active');
+      }
+
+      function restartLevel() {
+        buildLevelTerrain();
+        spawnMotorbike(150, 480);
+      }
+
+      function advanceToNextLevel() {
+        buildLevelTerrain();
+        spawnMotorbike(150, 480);
+      }
+
+      // Floating Stunt Text (+500 FLIP! Prompt 4)
+      function triggerStunt(title, pts) {
+        runScore += pts;
+        document.getElementById('hud-score-val').textContent = runScore;
+
+        const banner = document.getElementById('stuntBanner');
+        document.getElementById('stuntTitle').textContent = title;
+        document.getElementById('stuntPoints').textContent = `+${pts} PTS`;
+        banner.classList.add('active');
+        playFanfareSound();
+        setTimeout(() => banner.classList.remove('active'), 1200);
+
+        // Spawn floating text on game canvas
+        if (chassis) {
+          const popup = document.createElement('div');
+          popup.className = 'floating-popup-text';
+          popup.textContent = `${title} +${pts}`;
+          popup.style.left = `${window.innerWidth / 2 - 60}px`;
+          popup.style.top = `${window.innerHeight / 2 - 90}px`;
+          document.getElementById('screen-game').appendChild(popup);
+          setTimeout(() => popup.remove(), 1200);
+        }
+      }
+
+      // -------------------------------------------------------------
+      // 10. BUTTON EVENT LISTENERS
+      // -------------------------------------------------------------
+      // Main Menu -> Start Game (Prompt 1)
+      document.getElementById('btn-start-game').addEventListener('click', () => {
+        initAudio();
+        showScreen('game');
+        buildLevelTerrain();
+        spawnMotorbike(150, 480);
+      });
+
+      // Main Menu -> Garage (Prompt 1)
+      document.getElementById('btn-open-garage').addEventListener('click', () => {
+        initAudio();
+        showScreen('garage');
+      });
+
+      // Garage -> Back to Menu (Prompt 1)
+      document.getElementById('btn-garage-back').addEventListener('click', () => {
+        showScreen('mainMenu');
+      });
+
+      // Garage -> Launch Race
+      document.getElementById('btn-garage-launch').addEventListener('click', () => {
+        initAudio();
+        showScreen('game');
+        buildLevelTerrain();
+        spawnMotorbike(150, 480);
+      });
+
+      // Crashed Overlay: Restart Level (Prompt 4)
+      document.getElementById('btn-crashed-restart').addEventListener('click', () => {
+        restartLevel();
+      });
+
+      document.getElementById('btn-crashed-garage').addEventListener('click', () => {
+        showScreen('garage');
+      });
+
+      document.getElementById('btn-crashed-menu').addEventListener('click', () => {
+        showScreen('mainMenu');
+      });
+
+      // Level Complete Overlay: Next Level (Prompt 4)
+      document.getElementById('btn-level-next').addEventListener('click', () => {
+        advanceToNextLevel();
+      });
+
+      document.getElementById('btn-win-garage').addEventListener('click', () => {
+        showScreen('garage');
+      });
+
+      document.getElementById('btn-win-menu').addEventListener('click', () => {
+        showScreen('mainMenu');
+      });
+
+      // HUD Menu Button
+      document.getElementById('btn-hud-menu').addEventListener('click', () => {
+        showScreen('mainMenu');
+      });
+
+      // Share & Fullscreen
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen?.().catch(() => {});
+        } else {
+          document.exitFullscreen?.().catch(() => {});
+        }
+      }
+
+      document.getElementById('btn-fullscreen-main').addEventListener('click', toggleFullscreen);
+      document.getElementById('btn-hud-fullscreen').addEventListener('click', toggleFullscreen);
+
+      function shareGame() {
+        const shareUrl = window.location.href;
+        const text = `I'm racing Level ${gameSave.currentLevel} in Neon Rider Extreme! Can you beat my stunt flips?`;
+        if (navigator.share) {
+          navigator.share({ title: 'Neon Rider Extreme', text, url: shareUrl }).catch(() => {});
+        } else if (navigator.clipboard) {
+          navigator.clipboard.writeText(shareUrl).then(() => showToast('🔗 Game link copied to clipboard!'));
+        }
+      }
+
+      document.getElementById('btn-share-main').addEventListener('click', shareGame);
+      document.getElementById('btn-hud-share').addEventListener('click', shareGame);
+
+      let toastTimer = null;
+      function showToast(msg) {
+        const toast = document.getElementById('neon-toast');
+        if (!toast) return;
+        toast.textContent = msg;
+        toast.classList.add('show');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+      }
+
+      // -------------------------------------------------------------
+      // 11. GAME LOOP & RENDERING (Prompt 3 & 4)
+      // -------------------------------------------------------------
+      let camX = 150;
+      let camY = 480;
+      const particles = [];
+
+      function gameLoop() {
+        requestAnimationFrame(gameLoop);
+
+        if (activeScreenName !== 'game') return;
+
+        const currentNeon = getCurrentLevelColor();
+
+        // 1. Physics Step & Controls (Prompt 2)
+        if (!isCrashed && !isVictory && chassis && rearWheel && frontWheel) {
+          const gasAccel = activePhysics.motorTorque;
+          const brakeAccel = 0.05;
+          const maxSpd = activePhysics.maxSpeed;
+
+          // Right Arrow: forward velocity to back wheel
+          if (input.gas) {
+            let nextRear = rearWheel.angularVelocity + gasAccel;
+            if (nextRear > maxSpd) nextRear = maxSpd;
+            Body.setAngularVelocity(rearWheel, nextRear);
+
+            let nextFront = frontWheel.angularVelocity + gasAccel * 0.55;
+            if (nextFront > maxSpd) nextFront = maxSpd;
+            Body.setAngularVelocity(frontWheel, nextFront);
+
+            // Exhaust sparks
+            const exhaustPos = Vector.add(chassis.position, Vector.rotate({ x: -46, y: -4 }, chassis.angle));
+            particles.push({
+              x: exhaustPos.x,
+              y: exhaustPos.y,
+              vx: -chassis.velocity.x * 0.35 + (Math.random() - 0.5) * 2,
+              vy: -chassis.velocity.y * 0.2 - Math.random() * 2,
+              radius: Math.random() * 3 + 2,
+              color: currentNeon,
+              life: 1.0,
+              decay: 0.04
+            });
+          }
+
+          // Left Arrow: brakes
+          if (input.brake) {
+            let nextRear = rearWheel.angularVelocity - brakeAccel;
+            if (nextRear < -0.3) nextRear = -0.3;
+            Body.setAngularVelocity(rearWheel, nextRear);
+
+            let nextFront = frontWheel.angularVelocity - brakeAccel * 0.5;
+            if (nextFront < -0.3) nextFront = -0.3;
+            Body.setAngularVelocity(frontWheel, nextFront);
+          }
+
+          // 'A' and 'D' keys apply torque to chassis:
+          // Because the bike is lighter (density 0.001), A and D easily spin bike in mid-air for flips! (Prompt 2)
+          const spinTorque = 0.045 + (gameSave.bikes[gameSave.selectedBike]?.torque || 1) * 0.012;
+          if (input.leanBack) {
+            chassis.torque = -spinTorque;
+            Body.setAngularVelocity(chassis, chassis.angularVelocity - 0.024);
+          }
+          if (input.leanFwd) {
+            chassis.torque = spinTorque;
+            Body.setAngularVelocity(chassis, chassis.angularVelocity + 0.024);
+          }
+
+          Engine.update(engine, 1000 / 60);
+
+          // Speed & Telemetry
+          const speedPixels = Math.hypot(chassis.velocity.x, chassis.velocity.y);
+          const speedKmh = Math.round(speedPixels * 4.2);
+          document.getElementById('hud-speed-val').textContent = speedKmh;
+
+          const curDist = Math.max(0, Math.min(Math.round(chassis.position.x), FINISH_LINE_X));
+          document.getElementById('hud-dist-val').textContent = curDist;
+          document.getElementById('gameProgressFill').style.width = `${(curDist / FINISH_LINE_X) * 100}%`;
+
+          // Modulate Audio Pitch
+          if (engineOsc && audioCtx && soundEnabled) {
+            const targetFreq = 48 + Math.min(Math.abs(rearWheel.angularVelocity) * 230, 260) + (input.gas ? 40 : 0);
+            engineOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.05);
+          }
+
+          // Flip Mechanic (Prompt 4):
+          // Track chassis rotation in radians. If 360-deg rotation completed in mid-air and lands on wheels -> +500 FLIP!
+          let dAngle = chassis.angle - lastAngle;
+          while (dAngle > Math.PI) dAngle -= Math.PI * 2;
+          while (dAngle < -Math.PI) dAngle += Math.PI * 2;
+          lastAngle = chassis.angle;
+
+          const rearGrounded = engine.pairs.list.some(p => p.isActive && ((p.bodyA === rearWheel && p.bodyB.label === 'ground') || (p.bodyB === rearWheel && p.bodyA.label === 'ground')));
+          const frontGrounded = engine.pairs.list.some(p => p.isActive && ((p.bodyA === frontWheel && p.bodyB.label === 'ground') || (p.bodyB === frontWheel && p.bodyA.label === 'ground')));
+
+          if (!rearGrounded && !frontGrounded) {
+            isAirborne = true;
+            airborneRot += dAngle;
+          } else {
+            if (isAirborne) {
+              const fullFlips = Math.floor(Math.abs(airborneRot) / (Math.PI * 2));
+              if (fullFlips >= 1) {
+                const title = airborneRot < 0 ? (fullFlips > 1 ? `${fullFlips}X BACKFLIP!` : 'BACKFLIP!') : (fullFlips > 1 ? `${fullFlips}X FRONTFLIP!` : 'FRONTFLIP!');
+                triggerStunt(title, 500 * fullFlips);
+              }
+              isAirborne = false;
+              airborneRot = 0;
+            }
+          }
+
+          // Crashing in gaps (Prompt 4: bike falls into one of the gaps -> Y position > threshold)
+          if (chassis.position.y > 1100) {
+            handleGameOver('Fell into the chasm!');
+          }
+        }
+
+        // 2. Camera: Smoothly follows bike so player can see upcoming gaps (Prompt 4)
+        if (chassis) {
+          // Forward lead in X ensures upcoming ramps and chasms are clearly visible!
+          const targetCamX = chassis.position.x + 160 + Math.max(0, chassis.velocity.x * 12);
+          const targetCamY = chassis.position.y - 25;
+          camX += (targetCamX - camX) * 0.08;
+          camY += (targetCamY - camY) * 0.08;
+        }
+
+        // 3. Canvas Rendering
+        ctx.save();
+        ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+        // Dark Background (#0b0c10)
+        ctx.fillStyle = '#0b0c10';
+        ctx.fillRect(0, 0, viewWidth, viewHeight);
+
+        // Camera Transform
+        ctx.save();
+        ctx.translate(viewWidth / 2, viewHeight / 2);
+        ctx.translate(-camX, -camY);
+
+        // Parallax Grid
+        drawParallaxGrid(ctx, camX, camY);
+
+        // Giant Glowing Vertical Finish Line at X = 20000 (Prompt 3)
+        drawFinishLine(ctx, currentNeon);
+
+        // Procedural Terrain with Level Color (Prompt 3)
+        drawTerrain(ctx, currentNeon);
+
+        // Collectible Coins
+        drawCoins(ctx);
+
+        // Particles
+        drawParticles(ctx);
+
+        // Motorbike with Dynamic Neon Glow (Prompt 3)
+        drawMotorbike(ctx, currentNeon);
+
+        ctx.restore();
+        ctx.restore();
+      }
+
+      function drawParallaxGrid(ctx, cx, cy) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(69, 162, 158, 0.07)';
+        ctx.lineWidth = 1;
+        const grid = 140;
+        const startX = Math.floor((cx - viewWidth) / grid) * grid;
+        const endX = Math.ceil((cx + viewWidth) / grid) * grid;
+        const startY = Math.floor((cy - viewHeight) / grid) * grid;
+        const endY = Math.ceil((cy + viewHeight) / grid) * grid;
+
+        ctx.beginPath();
+        for (let x = startX; x <= endX; x += grid) {
+          ctx.moveTo(x, cy - viewHeight);
+          ctx.lineTo(x, cy + viewHeight);
+        }
+        for (let y = startY; y <= endY; y += grid) {
+          ctx.moveTo(cx - viewWidth, y);
+          ctx.lineTo(cx + viewWidth, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawFinishLine(ctx, neonColor) {
+        ctx.save();
+        const fx = FINISH_LINE_X;
+
+        ctx.shadowColor = neonColor;
+        ctx.shadowBlur = 35;
+        ctx.fillStyle = `${neonColor}33`;
+        ctx.strokeStyle = neonColor;
+        ctx.lineWidth = 4;
+
+        ctx.beginPath();
+        ctx.rect(fx - 25, -200, 50, 1100);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = '900 24px "Orbitron", sans-serif';
+        ctx.fillStyle = neonColor;
+        ctx.shadowColor = neonColor;
+        ctx.shadowBlur = 18;
+        ctx.fillText('FINISH LINE (20,000m)', fx - 160, 200);
+        ctx.restore();
+      }
+
+      function drawTerrain(ctx, neonColor) {
+        if (!terrainWaypoints.length) return;
+
+        const leftBound = camX - viewWidth / 2 - 160;
+        const rightBound = camX + viewWidth / 2 + 160;
+
+        ctx.save();
+
+        // 1. Dark Underbelly Fill
+        terrainWaypoints.forEach(segment => {
+          if (segment.length < 2) return;
+          if (segment[segment.length - 1].x < leftBound || segment[0].x > rightBound) return;
+
+          ctx.beginPath();
+          ctx.moveTo(segment[0].x, segment[0].y);
+          for (let i = 1; i < segment.length; i++) {
+            ctx.lineTo(segment[i].x, segment[i].y);
+          }
+          ctx.lineTo(segment[segment.length - 1].x, camY + viewHeight / 2 + 400);
+          ctx.lineTo(segment[0].x, camY + viewHeight / 2 + 400);
+          ctx.closePath();
+          ctx.fillStyle = '#06070a';
+          ctx.fill();
+        });
+
+        // 2. Glowing Neon Stroke matching current Level color (Prompt 3)
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = neonColor;
+        ctx.shadowColor = neonColor;
+        ctx.shadowBlur = 18;
+
+        for (let i = 0; i < terrainBodies.length; i++) {
+          const body = terrainBodies[i];
+          if (body.label !== 'ground' || !body.p1 || !body.p2) continue;
+          if (body.p2.x < leftBound || body.p1.x > rightBound) continue;
+
+          ctx.beginPath();
+          ctx.moveTo(body.p1.x, body.p1.y);
+          ctx.lineTo(body.p2.x, body.p2.y);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function drawCoins(ctx) {
+        const now = Date.now() * 0.005;
+        const leftBound = camX - viewWidth / 2 - 50;
+        const rightBound = camX + viewWidth / 2 + 50;
+
+        ctx.save();
+        for (let i = 0; i < coinBodies.length; i++) {
+          const coin = coinBodies[i];
+          if (coin.coinCollected) continue;
+          if (coin.position.x < leftBound || coin.position.x > rightBound) continue;
+
+          ctx.save();
+          ctx.translate(coin.position.x, coin.position.y);
+
+          ctx.shadowColor = '#ffe600';
+          ctx.shadowBlur = 15;
+          ctx.strokeStyle = '#ffe600';
+          ctx.fillStyle = 'rgba(255, 230, 0, 0.25)';
+          ctx.lineWidth = 3;
+
+          const spinScale = Math.cos(now + coin.position.x * 0.01);
+          ctx.scale(spinScale, 1);
+
+          ctx.beginPath();
+          ctx.arc(0, 0, 14, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, 8, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.restore();
+        }
+        ctx.restore();
+      }
+
+      function drawMotorbike(ctx, levelColor) {
+        if (!chassis || !rearWheel || !frontWheel) return;
+
+        // A. Shocks & Swingarms
+        ctx.save();
+        ctx.strokeStyle = activePhysics.accent || '#ff007f';
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = activePhysics.accent || '#ff007f';
+        ctx.shadowBlur = 10;
+
+        const rearMount = Vector.add(chassis.position, Vector.rotate({ x: -42, y: 6 }, chassis.angle));
+        const swingarmMount = Vector.add(chassis.position, Vector.rotate({ x: -12, y: 10 }, chassis.angle));
+        ctx.beginPath();
+        ctx.moveTo(rearMount.x, rearMount.y);
+        ctx.lineTo(rearWheel.position.x, rearWheel.position.y);
+        ctx.moveTo(swingarmMount.x, swingarmMount.y);
+        ctx.lineTo(rearWheel.position.x, rearWheel.position.y);
+        ctx.stroke();
+
+        const frontMount = Vector.add(chassis.position, Vector.rotate({ x: 42, y: 6 }, chassis.angle));
+        ctx.beginPath();
+        ctx.moveTo(frontMount.x, frontMount.y);
+        ctx.lineTo(frontWheel.position.x, frontWheel.position.y);
+        ctx.stroke();
+        ctx.restore();
+
+        // B. Hollow White Wheels with Rotating Spokes
+        [rearWheel, frontWheel].forEach(w => {
+          ctx.save();
+          ctx.translate(w.position.x, w.position.y);
+          ctx.rotate(w.angle);
+
+          ctx.shadowColor = '#ffffff';
+          ctx.shadowBlur = 14;
+          ctx.strokeStyle = activePhysics.wheelColor || '#ffffff';
+          ctx.lineWidth = 3.8;
+
+          ctx.beginPath();
+          ctx.arc(0, 0, w.circleRadius, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+          ctx.lineWidth = 2;
+          for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.moveTo(-w.circleRadius + 4, 0);
+            ctx.lineTo(w.circleRadius - 4, 0);
+            ctx.stroke();
+            ctx.rotate(Math.PI / 3);
+          }
+
+          ctx.fillStyle = levelColor;
+          ctx.beginPath();
+          ctx.arc(0, 0, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+
+        // C. Chassis with Dynamic Neon Glow matching Level Color (Prompt 3)
+        ctx.save();
+        ctx.translate(chassis.position.x, chassis.position.y);
+        ctx.rotate(chassis.angle);
+
+        ctx.shadowColor = levelColor;
+        ctx.shadowBlur = 24;
+        ctx.fillStyle = activePhysics.color;
+        ctx.strokeStyle = levelColor;
+        ctx.lineWidth = 2.5;
+
+        ctx.beginPath();
+        ctx.moveTo(-50, 6);
+        ctx.lineTo(-42, -12);
+        ctx.lineTo(-14, -12);
+        ctx.lineTo(10, -22);
+        ctx.lineTo(40, -18);
+        ctx.lineTo(52, 2);
+        ctx.lineTo(36, 14);
+        ctx.lineTo(-24, 14);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Cockpit Core
+        ctx.fillStyle = levelColor;
+        ctx.shadowColor = levelColor;
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(-4, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Rider Silhouette
+        const leanOffset = (input.leanBack ? -8 : 0) + (input.leanFwd ? 8 : 0);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4.5;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 10;
+
+        const hip = { x: -16, y: -10 };
+        const shoulder = { x: 4 + leanOffset, y: -34 };
+
+        ctx.beginPath();
+        ctx.moveTo(hip.x, hip.y);
+        ctx.lineTo(shoulder.x, shoulder.y);
+        ctx.stroke();
+
+        // Helmet
+        ctx.fillStyle = levelColor;
+        ctx.shadowColor = levelColor;
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(shoulder.x + 6, shoulder.y - 10, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      function drawParticles(ctx) {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= p.decay;
+
+          if (p.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+
+          ctx.save();
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // Start Render Loop
+      requestAnimationFrame(gameLoop);
+
+      // Start on Main Menu (Prompt 1)
+      showScreen('mainMenu');
+
+    })();
+  </script>
+</body>
+</html>
